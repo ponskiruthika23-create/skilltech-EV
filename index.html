@@ -1,1 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SkillTech EV Workforce Analytics</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298, #56ab2f, #a8e063);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      padding: 20px;
+    }
+    @keyframes gradientBG {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+    .container {
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      width: 650px;
+      margin: auto;
+      border-radius: 12px;
+      box-shadow: 0 0 15px #333;
+    }
+    h2 { text-align: center; }
+    button {
+      margin-top: 15px;
+      padding: 12px;
+      width: 48%;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background: #0056b3; }
+    .nav-buttons { display: flex; justify-content: space-between; }
+    #output { margin-top: 20px; }
+  </style>
+</head>
+<body>
 
+<!-- Page 1: Student Info + Resume Upload -->
+<div class="container" id="page1">
+  <h2>Step 1: Student Information</h2>
+  <label>Name:</label>
+  <input type="text" id="studentName"><br><br>
+  <label>Institution:</label>
+  <input type="text" id="institution"><br><br>
+  <label>Upload Resume:</label>
+  <input type="file" id="resumeUpload" accept=".txt"><br>
+  <div class="nav-buttons">
+    <button onclick="goToPage2()">Next ➡️</button>
+  </div>
+</div>
+
+<!-- Page 2: Desired Role -->
+<div class="container" id="page2" style="display:none;">
+  <h2>Step 2: Choose Desired Role</h2>
+  <select id="role">
+    <option value="EV Battery Engineer">EV Battery Engineer</option>
+    <option value="Automotive Technician">Automotive Technician</option>
+    <option value="Power Electronics Engineer">Power Electronics Engineer</option>
+    <option value="CAD/Design Engineer">CAD/Design Engineer</option>
+    <option value="Mechatronics Specialist">Mechatronics Specialist</option>
+  </select>
+  <div class="nav-buttons">
+    <button onclick="backToPage1()">⬅️ Back</button>
+    <button onclick="goToPage3()">Next ➡️</button>
+  </div>
+</div>
+
+<!-- Page 3: Skill Gap Analysis -->
+<div class="container" id="page3" style="display:none;">
+  <h2>Step 3: Skill Gap Analysis</h2>
+  <div id="missingSkillsOutput"></div>
+  <div class="nav-buttons">
+    <button onclick="backToPage2()">⬅️ Back</button>
+    <button onclick="goToPage4()">Next ➡️</button>
+  </div>
+</div>
+
+<!-- Page 4: Recommendations -->
+<div class="container" id="page4" style="display:none;">
+  <h2>Step 4: Recommendations</h2>
+  <div id="recommendationsOutput"></div>
+  <div class="nav-buttons">
+    <button onclick="backToPage3()">⬅️ Back</button>
+    <button onclick="goToPage5()">Next ➡️</button>
+  </div>
+</div>
+
+<!-- Page 5: Final Dashboard -->
+<div class="container" id="page5" style="display:none;">
+  <h2>Step 5: Final Dashboard</h2>
+  <div id="dashboardOutput"></div>
+  <div class="nav-buttons">
+    <button onclick="backToPage4()">⬅️ Back</button>
+  </div>
+</div>
+
+<script>
+let studentName = "";
+let institution = "";
+let role = "";
+let resumeText = "";
+
+// Required skills database
+const requiredSkills = {
+  "EV Battery Engineer": ["Battery Management Systems (BMS)", "Lithium-ion chemistry & safety", "Power electronics", "High-voltage safety", "Embedded C/C++ programming", "CAN bus", "MATLAB", "CAD"],
+  "Automotive Technician": ["Mechatronics", "CNC machining", "Lean manufacturing", "Automotive standards (ISO, AIS, BIS)", "Testing & validation"],
+  "Power Electronics Engineer": ["Power electronics", "High-voltage safety", "Embedded C/C++ programming", "Simulation tools (MATLAB/Simulink)"],
+  "CAD/Design Engineer": ["CAD/CAM design", "SolidWorks", "AutoCAD", "CATIA", "Mechatronics"],
+  "Mechatronics Specialist": ["Robotics", "Automation", "CNC machining", "IoT integration", "Lean manufacturing"]
+};
+
+// Learning resources (YouTube + PDFs)
+const learningResources = {
+  "Battery Management Systems (BMS)": {video:"https://www.youtube.com/watch?v=9vN6j0r2p5g", pdf:"https://www.researchgate.net/publication/EV_BMS_guide"},
+  "Lithium-ion chemistry & safety": {video:"https://www.youtube.com/watch?v=VxZzvZzZz", pdf:"https://www.sciencedirect.com/LithiumSafety"},
+  "Power electronics": {video:"https://www.youtube.com/watch?v=ZzZzPowerEV", pdf:"https://nptel.ac.in/courses/PowerElectronicsEV"},
+  "Embedded C/C++ programming": {video:"https://www.youtube.com/@EmbeddedC", pdf:"https://www.udemy.com/course/embedded-c-for-professionals-automotive-industrial/"},
+  "CAD/CAM design": {video:"https://www.youtube.com/@CADCAMTutorials", pdf:"https://academy.titansofcnc.com"},
+  "Mechatronics": {video:"https://www.youtube.com/watch?v=MechatronicsBasics", pdf:"https://www.researchgate.net/publication/MechatronicsTraining"}
+};
+
+// Navigation functions
+function goToPage2() {
+  studentName = document.getElementById("studentName").value;
+  institution = document.getElementById("institution").value;
+  const fileInput = document.getElementById("resumeUpload").files[0];
+  if (fileInput) {
+    const reader = new FileReader();
+    reader.onload = function(e) { resumeText = e.target.result; };
+    reader.readAsText(fileInput);
+  }
+  document.getElementById("page1").style.display = "none";
+  document.getElementById("page2").style.display = "block";
+}
+function backToPage1() {
+  document.getElementById("page2").style.display = "none";
+  document.getElementById("page1").style.display = "block";
+}
+
+function goToPage3() {
+  role = document.getElementById("role").value;
+  let foundSkills = [];
+  let missingSkills = [];
+
+  requiredSkills[role].forEach(skill => {
+    if (resumeText.toLowerCase().includes(skill.toLowerCase())) {
+      foundSkills.push(skill);
+    } else {
+      missingSkills.push(skill);
+    }
+  });
+
+  document.getElementById("missingSkillsOutput").innerHTML = `
+    <h3>Hello, ${studentName} from ${institution}</h3>
+    <p><strong>Desired Role:</strong> ${role}</p>
+    <p><strong>Skills Found:</strong> ${foundSkills.join(", ")}</p>
+    <p><strong>Missing Skills:</strong> ${missingSkills.join(", ")}</p>
+  `;
+  document.getElementById("page2").style.display = "none";
+  document.getElementById("page3").style.display = "block";
+}
+function backToPage2() {
+  document.getElementById("page3").style.display = "none";
+  document.getElementById("page2").style.display = "block";
+}
+
+function goToPage4() {
+  let missingSkills = requiredSkills[role].filter(skill => !resumeText.toLowerCase().includes(skill.toLowerCase()));
+  let recommendations = "<h3>Learning Path:</h3><ul>";
+  missingSkills.forEach(skill => {
+    if (learningResources[skill]) {
+      recommendations += `<li><strong>${skill}</strong><br>
+        📺 <a href="${learningResources[skill].video}" target="_blank">YouTube Video</a><br>
+        📄 <a href="${learningResources[skill].pdf}" target="_blank">PDF Guide</a></li>`;
+    }
+  });
+  recommendations +=
